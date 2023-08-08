@@ -4,7 +4,7 @@ class TicTacToe:
     # sets up the game
     # 
     # arguments:
-    # - players: The appearence of the placed items
+    # - players: The appearance of the placed items
     #
     # created variables:
     # - board: The board
@@ -48,12 +48,14 @@ class TicTacToe:
 
     # checks if there are any 3-in-a-row's containing the given input
     def check_win(self, input) -> bool:
+        x, y = input
+
         # check row
-        if np.all(self.board[input[0]] == self.board[input]):
+        if np.all(self.board[x] == self.board[input]):
             return True
         
         # check col
-        if np.all(self.board[:][input[1]] == self.board[input]):
+        if np.all(self.board[:, y] == self.board[input]):
             return True
         
         # check / diagonal
@@ -82,3 +84,6 @@ if __name__ == "__main__":
         myStr = int(input("Enter a move: "))
         game.place((myStr // 10, myStr % 10))
         print(game)
+
+        if game.gameOver == True:
+            break
