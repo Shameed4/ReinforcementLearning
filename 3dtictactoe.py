@@ -24,7 +24,7 @@ class TicTacToe:
 
     def is_legal(self, input) -> bool:
         # input is the wrong size (probably will never happen but good to be safe)
-        if len(input) != game.board.ndim:
+        if len(input) != self.board.ndim:
             return False
 
         # input is out of bounds (probably will happen many times)
@@ -42,7 +42,7 @@ class TicTacToe:
         self.board[input] = self.turn
 
         if self.check_win(input):
-            game.gameOver = True
+            self.gameOver = True
             return
 
         self.turn += 1
