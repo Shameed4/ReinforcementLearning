@@ -19,6 +19,9 @@ class TicTacToe:
         self.turn = 0
         self.gameOver = False
         self.remainingTurns = int(dimSize ** dims)
+
+        self.spotTaken = False
+        self.dimSize = dimSize
     
     def is_legal(self, input) -> bool:
         # input is the wrong size (probably will never happen but good to be safe)
@@ -34,9 +37,16 @@ class TicTacToe:
         
     # places an item on the board, assuming the move is legal
     def place(self, input):
+        self.spotTaken = False
+
         if not self.is_legal(input):
             return
         
+        if self.board[input] != -1:
+            print("Spot already taken, try again.")
+            self.spotTaken = True
+            return
+
         self.remainingTurns -= 1
         self.board[input] = self.turn
         
@@ -82,9 +92,29 @@ if __name__ == "__main__":
     game = TicTacToe()
 
     while True:
-        myStr = int(input("Enter a move: "))
-        game.place((myStr // 10, myStr % 10))
-        print(game)
+        myStr = input("Enter a move: ")
+        try:
+            myInt = int(myStr)
+        except ValueError:
+            print("Invalid move, enter a valid integer")
+            continue
+        
+        x = myInt // 10
+        y = myInt % 10
+        
+        if (x not in range(0, game.dimSize)) or (y not in range(0, game.dimSize)):
+            print("Move is out of bounds, try again")
+            continue
+
+        game.place((x, y))
+
+        if game.spotTaken == False:
+            print(game)
 
         if game.gameOver == True:
+            print(f"Player '{game.players[game.turn+1]}' wins!")
+            break
+
+        if game.remainingTurns == 0:
+            print("Draw")
             break
