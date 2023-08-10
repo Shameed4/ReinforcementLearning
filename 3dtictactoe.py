@@ -39,6 +39,7 @@ class TicTacToe:
         if not self.is_legal(input):
             return
 
+        self.remainingTurns -= 1
         self.board[input] = self.turn
 
         if self.check_win(input):
