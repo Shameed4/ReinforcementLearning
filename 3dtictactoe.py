@@ -75,13 +75,29 @@ class TicTacToe:
         if np.all(self.board[x,y,:] == self.board[input]):
             return True
 
-        # check / diagonal
-        if np.all(self.board.diagonal() == self.board[input]):
+        # check diagonal with same z but x and y are changing
+        zSlice = self.board[:,:,z] 
+        if x == y and np.all(zSlice.diagonal() == self.board[input]):
             return True
+        elif x == self.dimSize - y - 1 and np.all(np.fliplr(zSlice).diagonal() == self.board[input]):
+            return True
+        del zSlice
+        
+        # check diagonal with same y but x and z are changing
+        ySlice = self.board[:,y,:]
+        if x == z and np.all(ySlice.diagonal() == self.board[input]):
+            return True
+        elif x == self.dimSize - z - 1 and np.all(np.fliplr(ySlice).diagonal() == self.board[input]):
+            return True
+        del ySlice
 
-        # check \ diagonal
-        if np.all(np.fliplr(self.board).diagonal() == self.board[input]):
+        # check diagonal with same x but y and z are changing
+        xSlice = self.board[x,:,:]
+        if y == z and np.all(xSlice.diagonal() == self.board[input]):
             return True
+        elif y == self.dimSize - z - 1 and np.all(np.fliplr(xSlice).diagonal() == self.board[input]):
+            return True
+        del xSlice
 
         return False
 
