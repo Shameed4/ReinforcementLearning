@@ -1,4 +1,4 @@
-from tictactoe import TicTacToe
+from tictactoe2d import TicTacToe2D
 import numpy as np
 
 class QLearning:
@@ -6,14 +6,13 @@ class QLearning:
     # gamma - discount rate
     # epsilon - greedy-epsilon parameter
     # numEpisodes - number of simulated episodes
-    def __init__(self, game=None, alpha=0.01, gamma=0.01, epsilon=0.99, epsilonMultiplier=0.999, randomEpisodes=500, stimulatedEpisodes=2000):       
+    def __init__(self, game=None, alpha=0.01, gamma=0.01, epsilon=0.99, epsilonMultiplier=0.999, randomEpisodes=500):       
         self.game = game
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
         self.epsilonMultiplier = epsilonMultiplier
         self.randomEpisodes = randomEpisodes
-        self.stimulatedEpisodes = stimulatedEpisodes
 
         self.table = np.zeros((3,) * 9)
 
@@ -65,7 +64,7 @@ class QLearning:
                     break
 
 if __name__ == "__main__":
-    game = TicTacToe()
+    game = TicTacToe2D()
     model = QLearning(game)
     model.train(5000)
     print(np.max(model.table))

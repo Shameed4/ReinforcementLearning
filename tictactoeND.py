@@ -10,7 +10,7 @@ class TicTacToe:
     # - board: The board
     # - numPlayers: Number of players playing
     # - turn: Whose turn it is (indexed at zero)
-    def __init__(self, dims=2, dimSize=3, players=['', 'x', 'o']) -> None:
+    def __init__(self, dims, dimSize, players) -> None:
         self.board = np.full([dimSize for _ in range(dims)], -1, int)
         self.players = players
 
@@ -113,41 +113,3 @@ class TicTacToe:
                     ret[counter] = (i, j)
                     counter += 1
         return ret
-
-if __name__ == "__main__":
-    input("When prompted to enter a move, enter an integer. For example, to place in (1, 2), enter '12'.")
-    game = TicTacToe()
-
-    while True:
-        myStr = input("Enter a move: ")
-
-        if myStr.lower() == "reset":
-            game.reset()
-            print("Game has been reset.")
-            continue
-        
-        try:
-            myInt = int(myStr)
-        except ValueError:
-            print("Invalid move, enter a valid integer")
-            continue
-        
-        x = myInt // 10
-        y = myInt % 10
-        
-        if (x not in range(0, game.dimSize)) or (y not in range(0, game.dimSize)):
-            print("Move is out of bounds, try again")
-            continue
-
-        game.place((x, y))
-
-        if game.spotTaken == False:
-            print(game)
-
-        if game.gameOver == True:
-            print(f"Player '{game.players[game.turn+1]}' wins!")
-            break
-
-        if game.remainingTurns == 0:
-            print("Draw")
-            break

@@ -1,2 +1,2 @@
 # TicTacToe
-3D TicTacToe Game with Reinforcement Learning
+TicTacToe Game with Reinforcement Learning
