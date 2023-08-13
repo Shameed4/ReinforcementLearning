@@ -22,6 +22,13 @@ class TicTacToe:
 
         self.spotTaken = False
         self.dimSize = dimSize
+
+    def reset(self):
+        self.board = np.full([self.dimSize for _ in range(self.board.ndim)], -1, int)
+        self.turn = 0
+        self.gameOver = False
+        self.remainingTurns = int(self.dimSize ** self.board.ndim)
+        self.spotTaken = False
     
     def is_legal(self, input) -> bool:
         # input is the wrong size (probably will never happen but good to be safe)
@@ -93,6 +100,12 @@ if __name__ == "__main__":
 
     while True:
         myStr = input("Enter a move: ")
+
+        if myStr.lower() == "reset":
+            game.reset()
+            print("Game has been reset.")
+            continue
+        
         try:
             myInt = int(myStr)
         except ValueError:
