@@ -17,37 +17,12 @@ class QLearning:
 
         self.table = np.zeros((3,) * 9)
 
-
-    # Returns the index to use when looking up the reward in the Q-table
-    # move - Returns the index if the current player placed their move there. 
-    # If move is not specified, it returns the index at the current position.
-    def getState(self, move=None):
-        ret = self.game.board.flatten()
-        if move is None:
-            return tuple(ret)
-        ret[move] = game.turn
-        return tuple(ret)
-        
-    # Returns the list of possible positions to move at a given position
-    def getPossibleActions(self):
-        ret = np.zeros(game.remainingTurns, dtype=object)
-        counter = 0
-        for i in range(3):
-            for j in range(3):
-                if game.board[i, j] == -1:
-                    ret[counter] = (i, j)
-                    counter += 1
-        
-        return ret
-    
-
     # Selects a move based on the epsilon-greedy algorithm
     # In the beginning, it will initially pick moves that are ENTIRELY random to set up the Q-table
     # Later, it will choose between random and its best move
     # Episode - The number of episodes that have been simulated
     def selectMove(self, episode=0):
-        actions = self.getPossibleActions()
-        print("Actions", actions)
+        actions = self.game.getPossibleActions()
 
         if episode < self.randomEpisodes:
             return np.random.choice(actions)
@@ -66,13 +41,13 @@ class QLearning:
             self.game.reset() # reset the game after each episode
             episodeDone = False
             while not episodeDone:
-                s = self.getState()
+                s = self.game.getState()
                 a = self.selectMove(episode)
 
                 curr_q = self.table[s] # index the q table with the current state
 
                 self.game.place(a)
-                new_s = self.getState()
+                new_s = self.game.getState()
 
                 if self.game.gameOver == True: # max reward when game is won
                     reward = 1
@@ -93,3 +68,4 @@ if __name__ == "__main__":
     game = TicTacToe()
     model = QLearning(game)
     model.train(5000)
+    print(np.max(model.table))

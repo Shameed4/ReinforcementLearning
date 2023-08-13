@@ -92,7 +92,27 @@ class TicTacToe:
         for i, s in enumerate(self.players):
             boardCopy[boardCopy == str(i - 1)] = s
         return str(boardCopy)
-
+    
+    # Returns the index to use when looking up the reward in the Q-table
+    # move - Returns the index if the current player placed their move there. 
+    # If move is not specified, it returns the index at the current position.
+    def getState(self, move=None):
+        ret = self.board.flatten()
+        if move is None:
+            return tuple(ret)
+        ret[move] = self.turn
+        return tuple(ret)
+        
+    # Returns the list of possible positions to move at a given position
+    def getPossibleActions(self):
+        ret = np.zeros(self.remainingTurns, dtype=object)
+        counter = 0
+        for i in range(3):
+            for j in range(3):
+                if self.board[i, j] == -1:
+                    ret[counter] = (i, j)
+                    counter += 1
+        return ret
 
 if __name__ == "__main__":
     input("When prompted to enter a move, enter an integer. For example, to place in (1, 2), enter '12'.")
