@@ -1,42 +1,4 @@
-import numpy as np
-from tictactoeND import TicTacToe
-
-class TicTacToe2D(TicTacToe):
-    # sets up the game
-    # 
-    # arguments:
-    # - players: The appearance of the placed items
-    #
-    # created variables:
-    # - board: The board
-    # - numPlayers: Number of players playing
-    # - turn: Whose turn it is (indexed at zero)
-    def __init__(self) -> None:
-        super().__init__(dims=2, dimSize=3, players=['', 'x', 'o'])
-
-
-    # checks if there are any 3-in-a-row's containing the given input
-    def check_win(self, input) -> bool:
-        x, y = input
-
-        # check row
-        if np.all(self.board[x] == self.board[input]):
-            return True
-        
-        # check col
-        if np.all(self.board[:, y] == self.board[input]):
-            return True
-        
-        # check / diagonal
-        if np.all(self.board.diagonal() == self.board[input]):
-            return True
-        
-        # check \ diagonal
-        if np.all(np.fliplr(self.board).diagonal() == self.board[input]):
-            return True
-
-        return False
-
+from tictactoe import TicTacToe2D
 
 if __name__ == "__main__":
     input("When prompted to enter a move, enter an integer. For example, to place in (1, 2), enter '12'.")
