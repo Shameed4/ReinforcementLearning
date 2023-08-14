@@ -1,12 +1,13 @@
 import numpy as np
 from tictactoe import TicTacToe2D
+
 # player that makes moves by human input
 class HumanPlayer():
     def __init__(self, game) -> None:
         self.game = game
     
     def selectMove(self):
-        input("test")
+        input("Human Playing (Press Enter)")
         while True:
             try:
                 move = np.array(list(input("Select a move: ")), dtype=int)
@@ -31,6 +32,15 @@ class HumanPlayer():
                 return tuple(move)
             
             print("Invalid move - Piece already placed there")
+
+# player that chooses a random legal move
+class RandomPlayer():
+    def __init__(self, game) -> None:
+        self.game = game
+    
+    def selectMove(self):
+        actions = self.game.getPossibleActions()
+        return np.random.choice(actions)
 
 
 if __name__ == "__main__":

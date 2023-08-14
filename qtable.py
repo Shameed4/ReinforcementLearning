@@ -1,4 +1,4 @@
-from tictactoe2d import TicTacToe2D
+from tictactoe2dTester import TicTacToe2D
 import numpy as np
 
 class QLearning:
