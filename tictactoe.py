@@ -42,7 +42,11 @@ class TicTacToe:
             if i < 0 or i >= len(self.board):
                 return False
 
-        return True
+        # check if move was already placed there
+        if self.board[input] != -1:
+            print("Move was already placed here!")
+        
+        return self.board[input] == -1
         
     # places an item on the board, assuming the move is legal
     def place(self, input):

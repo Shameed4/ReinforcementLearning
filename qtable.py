@@ -17,6 +17,8 @@ class QLearning:
 
         if table is None:
             self.table = np.zeros((game.dimSize,) * 11) # 9 for state, 2 for action
+        else:
+            self.table = table
 
     # Places and returns a move based on the epsilon-greedy algorithm
     # In the beginning, it will initially pick moves that are ENTIRELY random to set up the Q-table
@@ -45,15 +47,20 @@ class QLearning:
     def train(self, episodes, opponent=None):
         if opponent is None:
             opponent = RandomPlayer(self.game)
+        
+        wins = 0
+        draws = 0
+        losses = 0
+        
         for episode in range(episodes):
             self.game.reset() # reset the game after each episode
             episodeDone = False
-
+            
+            if episode % 2 == 0:
+                opponent.pickMove()
+            
             while not episodeDone:
                 # alternate between X and O
-                if episode % 2 == 0:
-                    opponent.pickMove()
-                
                 s = self.game.getState()
                 a = self.pickMove(episode)
 
@@ -62,19 +69,23 @@ class QLearning:
                 if self.game.gameOver == True: # max reward when game is won
                     reward = 1
                     episodeDone = True
+                    wins += 1
                 elif self.game.remainingTurns == 0: # no reward when there is a draw
                     reward = 0
                     episodeDone = True
+                    draws += 1
                 else:          
                     opponent.pickMove()
                     new_s = self.game.getState()
 
                     if self.game.gameOver == True: # max punishment when game is lost
-                        reward = 1
+                        reward = -1
                         episodeDone = True
+                        losses += 1
                     elif self.game.remainingTurns == 0: # no reward when there is a draw
                         reward = 0
                         episodeDone = True
+                        draws += 1
                     else: # otherwise no reward
                         reward = 0
 
@@ -83,20 +94,28 @@ class QLearning:
 
                 if episodeDone:
                     break
+            
+        print(f'Wins={wins/episodes}, Draws={draws/episodes}, Losses={losses/episodes}, Epsilon={self.epsilon}')
     
     def cloneTable(self, epsilon=0.75, epsilonMultiplier=1):
-        return QLearning(game=self.game, epsilon=epsilon, epsilonMultiplier=epsilonMultiplier, table=np.copy(self.table))
+        return QLearning(game=self.game, randomEpisodes=0, epsilon=epsilon, epsilonMultiplier=epsilonMultiplier, table=np.copy(self.table))
 
 
 if __name__ == "__main__":
     game = TicTacToe2D()
-    model = QLearning(game, epsilonMultiplier=0.99999)
-    model.train(10000)
-    print("After first round epsilon: ", model.epsilon)
-    model.train(10000, opponent=model.cloneTable())
-    print("After second round epsilon: ", model.epsilon)
-    model.train(10000, opponent=model.cloneTable(epsilon=0.5))
-    print("After third round epsilon: ", model.epsilon)
-    model.train(10000, opponent=model.cloneTable(epsilon=0.2))
+    model = QLearning(game, epsilonMultiplier=0.999995, randomEpisodes=10000)
+    
+    print("Random")
+    model.train(20000)
+    model.randomEpisodes = 0
+    
+    for epsilon in range(9, 5, -1):
+        print("Clone")
+        model.train(20000, opponent=model.cloneTable(epsilon=epsilon/10))
+        print("Random")
+        model.train(10000)
+    
+    # playing against human
     model.epsilon = 0
+
     model.train(5, HumanPlayer(game))
