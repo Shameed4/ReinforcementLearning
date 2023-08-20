@@ -6,8 +6,9 @@ class HumanPlayer():
     def __init__(self, game) -> None:
         self.game = game
     
-    def selectMove(self):
-        input("Human Playing (Press Enter)")
+    def pickMove(self):
+        print("Playing as player", self.game.turn+1)
+        print(self.game)
         while True:
             try:
                 move = np.array(list(input("Select a move: ")), dtype=int)
@@ -28,8 +29,10 @@ class HumanPlayer():
             if not success:
                 continue
             
-            if self.game.board[tuple(move)] == -1:
-                return tuple(move)
+            move = tuple(move)
+            if self.game.board[move] == -1:
+                self.game.place(move)
+                return move
             
             print("Invalid move - Piece already placed there")
 
@@ -38,13 +41,15 @@ class RandomPlayer():
     def __init__(self, game) -> None:
         self.game = game
     
-    def selectMove(self):
+    def pickMove(self):
         actions = self.game.getPossibleActions()
-        return np.random.choice(actions)
+        move = np.random.choice(actions)
+        self.game.place(move)
+        return move
 
 
 if __name__ == "__main__":
     game = TicTacToe2D()
     agent = HumanPlayer(game)
     game.place((0, 0))
-    print(agent.selectMove())
+    print(agent.pickMove())
