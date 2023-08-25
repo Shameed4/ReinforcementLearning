@@ -37,19 +37,15 @@ class DQN:
         actions = self.game.getPossibleActions()
 
         if episode < self.randomEpisodes:
-            move = np.random.choice(actions)
-            game.place(move)
-            return move
+            return self.game.pickRandomMove()
 
         self.epsilon *= self.epsilonMultiplier
 
         if np.random.rand() < self.epsilon:
-            move = np.random.choice(actions)
-            game.place(move)
-            return move
+            return self.game.pickRandomMove()
 
         pred = self.model.predict(state)
-        move = np.argmax(pred[actions])
+        move = np.argmax(pred[np.unravel_index(actions, shape=self.game.board.shape)])
         self.game.place(actions[move])
         return actions[move]
 

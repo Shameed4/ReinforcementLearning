@@ -6,7 +6,7 @@ class HumanPlayer():
     def __init__(self, game) -> None:
         self.game = game
     
-    def pickMove(self):
+    def chooseMove(self):
         print("Playing as player", self.game.turn+1)
         print(self.game)
         while True:
@@ -31,7 +31,6 @@ class HumanPlayer():
             
             move = tuple(move)
             if self.game.board[move] == -1:
-                self.game.place(move)
                 return move
             
             print("Invalid move - Piece already placed there")
@@ -41,12 +40,12 @@ class RandomPlayer():
     def __init__(self, game) -> None:
         self.game = game
     
-    def pickMove(self):
-        return self.game.pickRandomAction()
+    def chooseMove(self):
+        return self.game.chooseRandomAction()
 
 
 if __name__ == "__main__":
     game = TicTacToe2D()
     agent = HumanPlayer(game)
     game.place((0, 0))
-    print(agent.pickMove())
+    print(agent.chooseMove())

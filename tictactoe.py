@@ -103,22 +103,41 @@ class TicTacToe:
     # move - Returns the index if the current player placed their move there. 
     # If move is not specified, it returns the index at the current position.
     def getState(self, move=None):
-        ret = self.board.flatten()
-        if move is None:
-            return tuple(ret)
-        ret[move] = self.turn
-        return tuple(ret)
+        return tuple(self.board.ravel())
     
     # Returns the list of possible positions to move at a given position
     def getPossibleActions(self):
         return list(zip(*np.where(self.board == -1)))
     
-    # Places and returns a random action
-    def pickRandomAction(self):
+    # Returns a random legal move
+    def chooseRandomAction(self):
         actions = self.getPossibleActions()
         move = actions[np.random.randint(len(actions))]
-        self.place(move)
         return move
+    
+    # Performs specified action and returns the new state, reward, and gameOver
+    def step(self, action, opponent):
+        self.place(action)
+        
+        # win
+        if self.gameOver:
+            return (self.getState(), 1, True)
+        # draw
+        if self.remainingTurns == 0:
+            return (self.getState(), 0, True)
+        
+        self.place(opponent.chooseMove())
+
+        # loss
+        if self.gameOver:
+            return (self.getState(), -1, True)
+        # draw
+        if self.remainingTurns == 0:
+            return (self.getState(), -1, True)
+        
+        # game is not over
+        return (self.getState(), 0, False)
+
 
 
 class TicTacToe2D(TicTacToe):

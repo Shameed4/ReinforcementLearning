@@ -21,24 +21,23 @@ class QLearning:
         else:
             self.table = table
 
-    # Places and returns a move based on the epsilon-greedy algorithm
-    # In the beginning, it will initially pick moves that are ENTIRELY random to set up the Q-table
+    # Chooses and returns a move based on the epsilon-greedy algorithm (without placing it)
+    # In the beginning, it will initially choose moves that are ENTIRELY random to set up the Q-table
     # Later, it will choose between random and its best move
     # Episode - The number of episodes that have been simulated
-    def pickMove(self, episode=0):
+    def chooseMove(self, episode=0):
         if episode < self.randomEpisodes:
-            return self.game.pickRandomAction()
+            return self.game.chooseRandomAction()
         
         self.epsilon *= self.epsilonMultiplier
         
         if np.random.rand() < self.epsilon:
-            return self.game.pickRandomAction()
+            return self.game.chooseRandomAction()
         
         actions = self.game.getPossibleActions()
         rewards = self.table[self.game.getState()][tuple(zip(*actions))] # numpy cannot index by a list of tuples so need to convert to tuple of lists
         
         move = np.argmax(rewards)
-        self.game.place(actions[move])
         return actions[move]
     
     # Trains the model for the specified number of episodes
@@ -55,44 +54,32 @@ class QLearning:
             self.game.reset() # reset the game after each episode
             episodeDone = False
             
+            # alternate between x and o
             if episode % 2 == 0:
-                opponent.pickMove()
+                self.game.place(opponent.chooseMove())
             
+            state = self.game.getState()
             while not episodeDone:
-                # alternate between X and O
-                s = self.game.getState()
-                a = self.pickMove(episode)
+                action = self.chooseMove(episode)
+                predQ = self.table[state][action] # index the q table with the current state and action
+                
+                # take game step
+                newState, reward, episodeDone = self.game.step(action, opponent)
 
-                curr_q = self.table[s][a] # index the q table with the current state and action
+                # update Q values
+                new_q = predQ + self.alpha * (reward + self.gamma * np.max(self.table[newState]) - predQ)
+                self.table[state][action] = new_q
 
-                if self.game.gameOver == True: # max reward when game is won
-                    reward = 1
-                    episodeDone = True
-                    wins += 1
-                elif self.game.remainingTurns == 0: # no reward when there is a draw
-                    reward = 0
-                    episodeDone = True
-                    draws += 1
-                else:          
-                    opponent.pickMove()
-                    new_s = self.game.getState()
-
-                    if self.game.gameOver == True: # max punishment when game is lost
-                        reward = -1
-                        episodeDone = True
-                        losses += 1
-                    elif self.game.remainingTurns == 0: # no reward when there is a draw
-                        reward = 0
-                        episodeDone = True
-                        draws += 1
-                    else: # otherwise no reward
-                        reward = 0
-
-                new_q = curr_q + self.alpha * (reward + self.gamma * np.max(self.table[new_s]) - curr_q)
-                self.table[s][a] = new_q
+                # update state
+                state = newState
 
                 if episodeDone:
-                    break
+                    if reward == 1:
+                        wins += 1
+                    elif reward == 0:
+                        draws += 1
+                    else:
+                        losses += 1
             
         print(f'Wins={wins/episodes}, Draws={draws/episodes}, Losses={losses/episodes}, Epsilon={self.epsilon}')
     
@@ -105,7 +92,7 @@ if __name__ == "__main__":
     model = QLearning(game, epsilonMultiplier=0.999995, randomEpisodes=10000, alpha=0.02, gamma=0.95)
     
     print("Random")
-    model.train(20000)
+    model.train(20000, opponent=RandomPlayer(game))
     model.randomEpisodes = 0
     
     for epsilon in range(100):
