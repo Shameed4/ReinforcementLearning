@@ -16,7 +16,8 @@ class QLearning:
         self.randomEpisodes = randomEpisodes
 
         if table is None:
-            self.table = np.zeros((game.dimSize,) * 11) # 9 for state, 2 for action
+            # dimSize^dims for the state, and dims for the actions
+            self.table = np.zeros((game.dimSize,) * (int(game.dimSize ** game.dims) + game.dims))
         else:
             self.table = table
 
@@ -25,25 +26,23 @@ class QLearning:
     # Later, it will choose between random and its best move
     # Episode - The number of episodes that have been simulated
     def pickMove(self, episode=0):
-        actions = self.game.getPossibleActions()
-
         if episode < self.randomEpisodes:
-            move = np.random.choice(actions)
-            game.place(move)
-            return move
+            return self.game.pickRandomAction()
         
         self.epsilon *= self.epsilonMultiplier
         
         if np.random.rand() < self.epsilon:
-            move = np.random.choice(actions)
-            game.place(move)
-            return move
+            return self.game.pickRandomAction()
         
+        actions = self.game.getPossibleActions()
         rewards = self.table[self.game.getState()][tuple(zip(*actions))] # numpy cannot index by a list of tuples so need to convert to tuple of lists
+        
         move = np.argmax(rewards)
         self.game.place(actions[move])
         return actions[move]
     
+    # Trains the model for the specified number of episodes
+    # If an opponent is not specified, the opponent will make a random legal move each time
     def train(self, episodes, opponent=None):
         if opponent is None:
             opponent = RandomPlayer(self.game)
@@ -103,17 +102,19 @@ class QLearning:
 
 if __name__ == "__main__":
     game = TicTacToe2D()
-    model = QLearning(game, epsilonMultiplier=0.999995, randomEpisodes=10000)
+    model = QLearning(game, epsilonMultiplier=0.999995, randomEpisodes=10000, alpha=0.02, gamma=0.95)
     
     print("Random")
     model.train(20000)
     model.randomEpisodes = 0
     
-    for epsilon in range(9, 5, -1):
+    for epsilon in range(100):
+        print("Remaining rounds:", 50 - epsilon, model.alpha)
         print("Clone")
-        model.train(20000, opponent=model.cloneTable(epsilon=epsilon/10))
+        model.train(5000, opponent=model)
         print("Random")
-        model.train(10000)
+        model.train(5000)
+        model.alpha = model.alpha * 0.95 + 0.0001
     
     # playing against human
     model.epsilon = 0

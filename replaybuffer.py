@@ -14,7 +14,7 @@ class ReplayBuffer:
     def add(self, state, action, reward, nextState, done):
         if len(self.memory) > self.capacity:
             return
-        experience = (self, state, action, reward, nextState,done)
+        experience = (self, state, action, reward, nextState, done)
         self.memory.append(experience)
 
     def sample(self, batch_size):

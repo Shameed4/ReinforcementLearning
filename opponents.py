@@ -42,10 +42,7 @@ class RandomPlayer():
         self.game = game
     
     def pickMove(self):
-        actions = self.game.getPossibleActions()
-        move = np.random.choice(actions)
-        self.game.place(move)
-        return move
+        return self.game.pickRandomAction()
 
 
 if __name__ == "__main__":

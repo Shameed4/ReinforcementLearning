@@ -33,7 +33,7 @@ class TicTacToe:
         self.spotTaken = False
     
     def is_legal(self, input) -> bool:
-        # input is the wrong size (probably will never happen but good to be safe)
+        # input is the wrong size 
         if len(input) != self.board.ndim:
             return False
         
@@ -108,6 +108,17 @@ class TicTacToe:
             return tuple(ret)
         ret[move] = self.turn
         return tuple(ret)
+    
+    # Returns the list of possible positions to move at a given position
+    def getPossibleActions(self):
+        return list(zip(*np.where(self.board == -1)))
+    
+    # Places and returns a random action
+    def pickRandomAction(self):
+        actions = self.getPossibleActions()
+        move = actions[np.random.randint(len(actions))]
+        self.place(move)
+        return move
 
 
 class TicTacToe2D(TicTacToe):
@@ -145,17 +156,6 @@ class TicTacToe2D(TicTacToe):
             return True
 
         return False
-    
-    # Returns the list of possible positions to move at a given position
-    def getPossibleActions(self):
-        ret = np.zeros(self.remainingTurns, dtype=object)
-        counter = 0
-        for i in range(self.dimSize):
-            for j in range(self.dimSize):
-                if self.board[i, j] == -1:
-                    ret[counter] = (i, j)
-                    counter += 1
-        return ret
 
 
 class TicTacToe3D(TicTacToe):
