@@ -22,33 +22,34 @@ class DQN:
     def build_model(self):
         model = tf.keras.Sequential()
 
-        model.add(tf.keras.layers.Flatten(input_shape=(self.game.board.shape)))
+        model.add(tf.keras.layers.Flatten(input_shape=self.game.board.shape))
         model.add(tf.keras.layers.Dense(units=24, activation='relu'))
         model.add(tf.keras.layers.Dense(units=24, activation='relu'))
         model.add(tf.keras.layers.Dense(units=self.actions))
 
-        model.compile(optimizer=tf.keras.optimizers.Adam(lr=self.alpha),
+        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=self.alpha),
                       loss='mean_square_error',
                       metrics=['mae'])
-
+        # print(model.summary())
         return model
 
-    def pickMove(self, state, episode=0):
-        actions = self.game.getPossibleActions()
-
+    def chooseMove(self, state, episode=0):
         if episode < self.randomEpisodes:
-            return self.game.pickRandomMove()
+            return self.game.chooseRandomAction()
 
         self.epsilon *= self.epsilonMultiplier
 
         if np.random.rand() < self.epsilon:
-            return self.game.pickRandomMove()
+            return self.game.chooseRandomMove()
 
+        actions = self.game.getPossibleActions()
         pred = self.model.predict(state)
         move = np.argmax(pred[np.unravel_index(actions, shape=self.game.board.shape)])
         self.game.place(actions[move])
         return actions[move]
 
+    # Trains the model for the specified number of episodes
+    # If an opponent is not specified, the opponent will make a random legal move each time
     def train(self, episodes, opponent=None):
         if opponent is None:
             opponent = RandomPlayer(self.game)
@@ -61,46 +62,45 @@ class DQN:
             self.game.reset() # reset the game after each episode
             episodeDone = False
             
+            # alternate between x and o
             if episode % 2 == 0:
-                opponent.pickMove()
+                self.game.place(opponent.chooseMove())
             
+            state = self.game.getState()
             while not episodeDone:
-                # alternate between X and O
-                s = self.game.getState()
-                a = self.pickMove(episode, s)
+                legalMoves = self.game.getPossibleActions(flatten=True)
+                print("Legal moves", legalMoves)
 
-                curr_q = self.table[s][a] # index the q table with the current state and action
+                predQ = self.model.predict(np.expand_dims(self.game.board, axis=0))[0]  # index the q table with the current state and action
+                print("Predictions:", predQ)
+                action = np.unravel_index(legalMoves[np.argmax(predQ[legalMoves])], shape=self.game.board.shape)
 
-                if self.game.gameOver == True: # max reward when game is won
-                    reward = 1
-                    episodeDone = True
-                    wins += 1
-                elif self.game.remainingTurns == 0: # no reward when there is a draw
-                    reward = 0
-                    episodeDone = True
-                    draws += 1
-                else:          
-                    opponent.pickMove()
-                    new_s = self.game.getState()
+                # take game step
+                newState, reward, episodeDone = self.game.step(action, opponent)
 
-                    if self.game.gameOver == True: # max punishment when game is lost
-                        reward = -1
-                        episodeDone = True
-                        losses += 1
-                    elif self.game.remainingTurns == 0: # no reward when there is a draw
-                        reward = 0
-                        episodeDone = True
-                        draws += 1
-                    else: # otherwise no reward
-                        reward = 0
+                # # update Q values
+                # new_q = predQ + self.alpha * (reward + self.gamma * np.max(self.table[newState]) - predQ)
+                # self.table[state][action] = new_q
+                #
+                # # update state
+                state = newState
 
-                new_q = curr_q + self.alpha * (reward + self.gamma * np.max(self.table[new_s]) - curr_q)
-                self.table[s][a] = new_q
-
+                # update stats
                 if episodeDone:
-                    break
+                    if reward == 1:
+                        wins += 1
+                    elif reward == 0:
+                        draws += 1
+                    else:
+                        losses += 1
             
         print(f'Wins={wins/episodes}, Draws={draws/episodes}, Losses={losses/episodes}, Epsilon={self.epsilon}')
 
     def updateBuffer(self, state, action, reward, next_state, done):
         self.replayBuffer.add(state, action, reward, next_state, done)
+
+
+if __name__ == "__main__":
+    game = TicTacToe2D()
+    myDQN = DQN(game=game)
+    myDQN.train(1)
