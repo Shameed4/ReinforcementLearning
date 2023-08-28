@@ -42,7 +42,7 @@ class DQN:
         predQ = self.mainModel.predict(np.expand_dims(state, axis=0))[0]
 
         # finds the Q-value for the best legal move and turns it into a board coordinate
-        action = np.unravel_index(legalMoves[np.argmax(predQ[legalMoves])], shape=self.game.board.shape)
+        action = legalMoves[np.argmax(predQ[legalMoves])]
         return action, predQ[action]
 
     def chooseMove(self, state, episode=0):
@@ -109,13 +109,24 @@ class DQN:
                                 nextReward = self.bestLegalMoveReward(states[i])
                                 target_queue_values.append(rewards[i] + self.gamma * nextReward)
 
-                        states = tf.convert_to_tensor(states, dtype=np.float32)
-                        target_queue_values = tf.convert_to_tensor(target_queue_values, dtype=np.float32)
+                        # Convert to TensorFlow tensors
+                        states = tf.convert_to_tensor(states, dtype=tf.float32)
+                        target_q_values = tf.convert_to_tensor(target_q_values, dtype=tf.float32)
 
+                        # Calculate main network predictions and loss
                         with tf.GradientTape() as tape:
                             q_values = self.mainModel(states)
-                            actions = tf.convert_to_tensor(actions.unravel_index)
-                            loss = tf.reduce_mean(tf.square())
+                            action_indices = tf.convert_to_tensor(actions, dtype=tf.int32)  # Convert actions to tensor
+                            selected_q_values = tf.gather(q_values, action_indices, batch_dims=1)  # Select Q-values of chosen actions
+                            loss = tf.reduce_mean(tf.square(target_q_values - selected_q_values))
+
+                        # Update main network weights
+                        gradients = tape.gradient(loss, self.mainModel.trainable_variables)
+                        self.mainModel.optimizer.apply_gradients(zip(gradients, self.mainModel.trainable_variables))
+
+                        states = tf.convert_to_tensor(states, dtype=tf.float32)
+                        target_queue_values = tf.convert_to_tensor(target_queue_values, dtype=tf.float32)
+
 
 
                     if step % self.targetUpdateFreq == 0:

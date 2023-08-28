@@ -19,12 +19,12 @@ class TicTacToe:
 
         self.turn = 0
         self.gameOver = False
-        self.remainingTurns = int(dimSize ** dims)
+        self.remainingTurns = self.board.size
 
         self.spotTaken = False
         self.dims = dims
         self.dimSize = dimSize
-        self.n_actions = int(dimSize ** dims)
+        self.n_actions = self.board.size
 
     def reset(self):
         self.board = np.full([self.dimSize for _ in range(self.board.ndim)], -1, int)
@@ -33,38 +33,41 @@ class TicTacToe:
         self.remainingTurns = int(self.dimSize ** self.board.ndim)
         self.spotTaken = False
     
-    def is_legal(self, input) -> bool:
-        # input is the wrong size 
-        if len(input) != self.board.ndim:
+    def is_legal(self, move) -> bool:
+        # input is the wrong size
+        if len(move) != self.board.ndim:
             return False
         
         # input is out of bounds (probably will happen many times)
-        for i in input:
+        for i in move:
             if i < 0 or i >= len(self.board):
                 return False
 
         # check if move was already placed there
-        if self.board[input] != -1:
+        if self.board[move] != -1:
             print("Move was already placed here!")
         
-        return self.board[input] == -1
+        return self.board[move] == -1
         
     # places an item on the board, assuming the move is legal
-    def place(self, input):
+    def place(self, move):
+        if not isinstance(move, int):
+            move = np.unravel_index(move, shape=self.board.shape)
+
         self.spotTaken = False
 
-        if not self.is_legal(input):
+        if not self.is_legal(move):
             return
         
-        if self.board[input] != -1:
+        if self.board[move] != -1:
             print("Spot already taken, try again.")
             self.spotTaken = True
             return
 
         self.remainingTurns -= 1
-        self.board[input] = self.turn
+        self.board[move] = self.turn
         
-        if self.check_win(input):
+        if self.check_win(move):
             self.gameOver = True
             return
 
@@ -108,15 +111,11 @@ class TicTacToe:
     
     # Returns the list of possible positions to move at a given position
     def getPossibleActions(self, flatten=False):
-        if not flatten:
-            return list(zip(*np.where(self.board == -1)))
         return np.where(self.board.ravel() == -1)[0]
     
     # Returns a random legal move
     def chooseRandomAction(self):
-        actions = self.getPossibleActions()
-        move = actions[np.random.randint(len(actions))]
-        return move
+        return np.random.choice(self.getPossibleActions())
     
     # Performs specified action and returns the new state, reward, and gameOver
     def step(self, action, opponent):
@@ -124,22 +123,22 @@ class TicTacToe:
         
         # win
         if self.gameOver:
-            return (self.getState(), 1, True)
+            return self.getState(), 1, True
         # draw
         if self.remainingTurns == 0:
-            return (self.getState(), 0, True)
+            return self.getState(), 0, True
         
         self.place(opponent.chooseMove())
 
         # loss
         if self.gameOver:
-            return (self.getState(), -1, True)
+            return self.getState(), -1, True
         # draw
         if self.remainingTurns == 0:
-            return (self.getState(), -1, True)
+            return self.getState(), -1, True
         
         # game is not over
-        return (self.getState(), 0, False)
+        return self.getState(), 0, False
 
 
 

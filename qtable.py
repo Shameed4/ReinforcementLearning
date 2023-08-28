@@ -16,8 +16,8 @@ class QLearning:
         self.randomEpisodes = randomEpisodes
 
         if table is None:
-            # dimSize^dims for the state, and dims for the actions
-            self.table = np.zeros((game.dimSize,) * (int(game.dimSize ** game.dims) + game.dims))
+            # (numPlayers+1)^boardSize for the state, and boardSize for action
+            self.table = np.zeros((game.numPlayers + 1,) * game.board.size + (game.board.size,))
         else:
             self.table = table
 
@@ -35,7 +35,7 @@ class QLearning:
             return self.game.chooseRandomAction()
         
         actions = self.game.getPossibleActions()
-        rewards = self.table[self.game.getState()][tuple(zip(*actions))] # numpy cannot index by a list of tuples so need to convert to tuple of lists
+        rewards = self.table[self.game.getState()][actions]
         
         move = np.argmax(rewards)
         return actions[move]
