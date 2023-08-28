@@ -24,6 +24,7 @@ class TicTacToe:
         self.spotTaken = False
         self.dims = dims
         self.dimSize = dimSize
+        self.n_actions = int(dimSize ** dims)
 
     def reset(self):
         self.board = np.full([self.dimSize for _ in range(self.board.ndim)], -1, int)

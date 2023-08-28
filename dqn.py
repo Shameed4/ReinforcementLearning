@@ -2,11 +2,12 @@ from tictactoe import TicTacToe2D
 from opponents import *
 import numpy as np
 import tensorflow as tf
-from replaybuffer import ReplayBuffer
+from collections import deque
+import random
 
 class DQN:
-    def __init__(self, states=3**9, actions=9, game=None, alpha=0.01, gamma=0.01, epsilon=0.99, epsilonMultiplier=0.9995, randomEpisodes=5000, capacity=5000):
-        self.states = states # is this needed?
+    def __init__(self, actions=9, game=None, alpha=0.01, gamma=0.95, epsilon=0.99, epsilonMultiplier=0.9995,
+                 randomEpisodes=5000, bufferCapacity=100, sampleSize=5, mainUpdateFreq=10, targetUpdateFreq=200):
         self.actions = actions
         self.game = game
         self.alpha = alpha
@@ -14,15 +15,16 @@ class DQN:
         self.epsilon = epsilon
         self.epsilonMultiplier = epsilonMultiplier
         self.randomEpisodes = randomEpisodes
-        self.replayBuffer = ReplayBuffer(capacity) # can this be replaced with a list or Queue?
-
-        self.model = self.build_model()
+        self.replayBuffer = deque([], maxlen=bufferCapacity)
+        self.mainModel, self.targetModel = self.build_model()
+        self.sampleSize = sampleSize
+        self.mainUpdateFreq = mainUpdateFreq
+        self.targetUpdateFreq = targetUpdateFreq
 
     # maybe we can make this accept a list as a parameter to avoid hard-coding the network?
     def build_model(self):
         model = tf.keras.Sequential()
 
-        model.add(tf.keras.layers.Flatten(input_shape=self.game.board.shape))
         model.add(tf.keras.layers.Dense(units=24, activation='relu'))
         model.add(tf.keras.layers.Dense(units=24, activation='relu'))
         model.add(tf.keras.layers.Dense(units=self.actions))
@@ -31,7 +33,17 @@ class DQN:
                       loss='mean_square_error',
                       metrics=['mae'])
         # print(model.summary())
-        return model
+        return model, tf.keras.models.clone_model(model)
+
+    def bestLegalMoveReward(self, state):
+        legalMoves = self.game.getPossibleActions(state=state, flatten=True)
+
+        # find Q-values for all possible moves (including illegal ones)
+        predQ = self.mainModel.predict(np.expand_dims(state, axis=0))[0]
+
+        # finds the Q-value for the best legal move and turns it into a board coordinate
+        action = np.unravel_index(legalMoves[np.argmax(predQ[legalMoves])], shape=self.game.board.shape)
+        return action, predQ[action]
 
     def chooseMove(self, state, episode=0):
         if episode < self.randomEpisodes:
@@ -42,11 +54,7 @@ class DQN:
         if np.random.rand() < self.epsilon:
             return self.game.chooseRandomMove()
 
-        actions = self.game.getPossibleActions()
-        pred = self.model.predict(state)
-        move = np.argmax(pred[np.unravel_index(actions, shape=self.game.board.shape)])
-        self.game.place(actions[move])
-        return actions[move]
+        return self.bestLegalMoveReward(state)[0]
 
     # Trains the model for the specified number of episodes
     # If an opponent is not specified, the opponent will make a random legal move each time
@@ -57,6 +65,7 @@ class DQN:
         wins = 0
         draws = 0
         losses = 0
+        step = 0
         
         for episode in range(episodes):
             self.game.reset() # reset the game after each episode
@@ -68,21 +77,15 @@ class DQN:
             
             state = self.game.getState()
             while not episodeDone:
-                legalMoves = self.game.getPossibleActions(flatten=True)
-                print("Legal moves", legalMoves)
-
-                predQ = self.model.predict(np.expand_dims(self.game.board, axis=0))[0]  # index the q table with the current state and action
-                print("Predictions:", predQ)
-                action = np.unravel_index(legalMoves[np.argmax(predQ[legalMoves])], shape=self.game.board.shape)
+                step += 1
+                action = self.chooseMove(state, episode)
 
                 # take game step
                 newState, reward, episodeDone = self.game.step(action, opponent)
 
-                # # update Q values
-                # new_q = predQ + self.alpha * (reward + self.gamma * np.max(self.table[newState]) - predQ)
-                # self.table[state][action] = new_q
-                #
-                # # update state
+                # update replay buffer
+                self.replayBuffer.append((state, action, reward, newState, episodeDone))
+
                 state = newState
 
                 # update stats
@@ -93,14 +96,36 @@ class DQN:
                         draws += 1
                     else:
                         losses += 1
+
+                if len(self.replayBuffer) == self.replayBuffer.maxlen:
+                    if step % self.mainUpdateFreq == 0:
+                        batch = random.sample(self.replayBuffer, self.sampleSize)
+                        states, actions, rewards, nextStates, episodeDones = zip(*batch)
+                        target_queue_values = []
+                        for i in range(self.sampleSize):
+                            if episodeDones[i]:
+                                target_queue_values.append(rewards[i])
+                            else:
+                                nextReward = self.bestLegalMoveReward(states[i])
+                                target_queue_values.append(rewards[i] + self.gamma * nextReward)
+
+                        states = tf.convert_to_tensor(states, dtype=np.float32)
+                        target_queue_values = tf.convert_to_tensor(target_queue_values, dtype=np.float32)
+
+                        with tf.GradientTape() as tape:
+                            q_values = self.mainModel(states)
+                            actions = tf.convert_to_tensor(actions.unravel_index)
+                            loss = tf.reduce_mean(tf.square())
+
+
+                    if step % self.targetUpdateFreq == 0:
+                        self.targetModel = tf.keras.models.clone_model(self.mainModel)
+
             
         print(f'Wins={wins/episodes}, Draws={draws/episodes}, Losses={losses/episodes}, Epsilon={self.epsilon}')
-
-    def updateBuffer(self, state, action, reward, next_state, done):
-        self.replayBuffer.add(state, action, reward, next_state, done)
 
 
 if __name__ == "__main__":
     game = TicTacToe2D()
-    myDQN = DQN(game=game)
-    myDQN.train(1)
+    myDQN = DQN(game=game, epsilon=0)
+    myDQN.train(20)

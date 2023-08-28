@@ -7,7 +7,7 @@ class QLearning:
     # gamma - discount rate
     # epsilon - greedy-epsilon parameter
     # numEpisodes - number of simulated episodes
-    def __init__(self, game=None, alpha=0.01, gamma=0.01, epsilon=0.99, epsilonMultiplier=0.9995, randomEpisodes=5000, table=None):       
+    def __init__(self, game, alpha=0.01, gamma=0.95, epsilon=0.99, epsilonMultiplier=0.9995, randomEpisodes=5000, table=None):
         self.game = game
         self.alpha = alpha
         self.gamma = gamma
