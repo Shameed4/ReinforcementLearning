@@ -51,6 +51,7 @@ class TicTacToe:
         
     # places an item on the board, assuming the move is legal
     def place(self, move):
+        # interprets the move if it is not an integer but a tuple instead
         if not isinstance(move, int):
             move = np.unravel_index(move, shape=self.board.shape)
 
@@ -135,7 +136,7 @@ class TicTacToe:
             return self.getState(), -1, True
         # draw
         if self.remainingTurns == 0:
-            return self.getState(), -1, True
+            return self.getState(), 0, True
         
         # game is not over
         return self.getState(), 0, False
