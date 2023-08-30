@@ -73,10 +73,11 @@ class QLearning:
                 # update state
                 state = newState
 
+                # update stats
                 if episodeDone:
-                    if reward == 1:
+                    if reward == self.game.winReward:
                         wins += 1
-                    elif reward == 0:
+                    elif reward == self.game.drawReward:
                         draws += 1
                     else:
                         losses += 1
@@ -89,21 +90,47 @@ class QLearning:
 
 if __name__ == "__main__":
     game = TicTacToe2D()
-    model = QLearning(game, epsilonMultiplier=0.999995, randomEpisodes=10000, alpha=0.02, gamma=0.95)
+    model = QLearning(game, epsilonMultiplier=0.999995, randomEpisodes=20000, alpha=0.02, gamma=0.95)
     
     print("Random")
     model.train(20000, opponent=RandomPlayer(game))
     model.randomEpisodes = 0
     
-    for epsilon in range(100):
-        print("Remaining rounds:", 50 - epsilon, model.alpha)
-        print("Clone")
-        model.train(5000, opponent=model)
-        print("Random")
-        model.train(5000)
-        model.alpha = model.alpha * 0.95 + 0.0001
+    def trainEpoch(randomEpisodes, cloneEpisodes, steps, minEpsilon, maxEpsilon):
+        print("-----------\nNew Epoch\n-----------")
+        for trainStep in range(steps):
+            model.epsilon = np.random.rand() * (maxEpsilon - minEpsilon) + minEpsilon
+            print("Remaining rounds:", steps - trainStep, "alpha=", model.alpha)
+            if cloneEpisodes != 0:
+                print("Clone")
+                model.train(cloneEpisodes, opponent=model)
+            if randomEpisodes != 0:
+                print("Random")
+                model.train(randomEpisodes)
+
+    trainEpoch(2000, 0, 20, 0.95, 1)
+    trainEpoch(2000, 0, 20, 0.5, 1)
+    trainEpoch(2000, 1000, 20, 0.25, 0.5)
+    trainEpoch(2000, 1500, 20, 0, 0.25)
+    trainEpoch(2000, 1500, 200, 0, 1)
+    trainEpoch(2000, 1500, 100, 0, 0)
+
+    randEpisodes = 2000
+    cloneEpisodes = 0
+    steps = 20
+    minEpsilon = 0
+    maxEpsilon = 1
+
+    while input("Continue training? (y/n)") != "n":
+        if input("Change parameters (y/n)") != "n":
+            randEpisodes = int(input("Random episodes:"))
+            cloneEpisodes = int(input("Clone episodes:"))
+            steps = int(input("Steps:"))
+            minEpsilon = float(input("Min epsilon:"))
+            maxEpsilon = float(input("Max epsilon:"))
+        trainEpoch(randEpisodes, cloneEpisodes, steps, minEpsilon, maxEpsilon)
+        
+        
     
-    # playing against human
-    model.epsilon = 0
 
     model.train(5, HumanPlayer(game))

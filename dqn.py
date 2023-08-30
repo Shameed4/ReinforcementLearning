@@ -7,7 +7,7 @@ import random
 
 class DQN:
     def __init__(self, actions=9, game=None, alpha=0.01, gamma=0.95, epsilon=0.99, epsilonMultiplier=0.9995,
-                 randomEpisodes=5000, bufferCapacity=100, sampleSize=5, mainUpdateFreq=10, targetUpdateFreq=200):
+                 randomEpisodes=5000, bufferCapacity=1000, sampleSize=16, mainUpdateFreq=200, targetUpdateFreq=2000):
         self.actions = actions
         self.game = game
         self.alpha = alpha
@@ -124,11 +124,6 @@ class DQN:
                         gradients = tape.gradient(loss, self.mainModel.trainable_variables)
                         self.mainModel.optimizer.apply_gradients(zip(gradients, self.mainModel.trainable_variables))
 
-                        states = tf.convert_to_tensor(states, dtype=tf.float32)
-                        target_queue_values = tf.convert_to_tensor(target_queue_values, dtype=tf.float32)
-
-
-
                     if step % self.targetUpdateFreq == 0:
                         self.targetModel = tf.keras.models.clone_model(self.mainModel)
 
@@ -139,4 +134,4 @@ class DQN:
 if __name__ == "__main__":
     game = TicTacToe2D()
     myDQN = DQN(game=game, epsilon=0)
-    myDQN.train(20)
+    myDQN.train(10000)

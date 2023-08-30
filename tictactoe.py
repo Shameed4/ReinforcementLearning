@@ -26,6 +26,10 @@ class TicTacToe:
         self.dimSize = dimSize
         self.n_actions = self.board.size
 
+        self.winReward = 1
+        self.drawReward = 0.2
+        self.losePunishment = 1
+
     def reset(self):
         self.board = np.full([self.dimSize for _ in range(self.board.ndim)], -1, int)
         self.turn = 0
@@ -124,19 +128,19 @@ class TicTacToe:
         
         # win
         if self.gameOver:
-            return self.getState(), 1, True
+            return self.getState(), self.winReward, True
         # draw
         if self.remainingTurns == 0:
-            return self.getState(), 0, True
+            return self.getState(), self.drawReward, True
         
         self.place(opponent.chooseMove())
 
         # loss
         if self.gameOver:
-            return self.getState(), -1, True
+            return self.getState(), -self.losePunishment, True
         # draw
         if self.remainingTurns == 0:
-            return self.getState(), 0, True
+            return self.getState(), self.drawReward, True
         
         # game is not over
         return self.getState(), 0, False
