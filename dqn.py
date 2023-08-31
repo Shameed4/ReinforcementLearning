@@ -129,7 +129,7 @@ class DQN:
             current_state_q_value[actions[i]] = targets[i]
             current_state_q_values.append(current_state_q_value)
 
-        self.mainModel.fit(states, current_state_q_values)
+        self.mainModel.fit(np.array(states), np.array(current_state_q_values))
             
 if __name__ == "__main__":
     game = TicTacToe2D()
