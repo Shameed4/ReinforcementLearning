@@ -7,7 +7,7 @@ import random
 
 class DQN:
     def __init__(self, actions=9, game=None, alpha=0.01, gamma=0.95, epsilon=0.99, epsilonMultiplier=0.9995,
-                 randomEpisodes=5000, bufferCapacity=10000, batchSize=16, mainUpdateFreq=200, targetUpdateFreq=2000):
+                 randomEpisodes=5000, bufferCapacity=10000, batchSize=32, mainUpdateFreq=200, targetUpdateFreq=10000):
         self.actions = actions
         self.game = game
         self.alpha = alpha
@@ -108,27 +108,30 @@ class DQN:
         print(f'Wins={wins/episodes}, Draws={draws/episodes}, Losses={losses/episodes}, Epsilon={self.epsilon}')
 
     def updateTarget(self):
-            self.targetModel = tf.keras.models.clone_model(self.mainModel)
+        main_weights = self.mainModel.get_weights()
+        self.targetModel.set_weights(main_weights)
 
     def replayUpdate(self, replayBuffer, batchSize):
         batch = random.sample(replayBuffer, batchSize)
-        for (state, action, reward, nextState, episodeDone) in batch:
-            # initialize the target as the immediate reward
-            target = reward 
-            if not episodeDone:
+        states, actions, rewards, nextStates, episodeDones = zip(*batch)
+        targets = np.array(rewards)
+        current_state_q_values = [ ]
+        for i in range(len(batch)):
+            if not episodeDones[i]:
                 # use the target network to predict the next state q-values
-                next_state_q_values = self.targetModel.predict(np.expand_dims(nextState, axis=0))[0]
-                target = reward + self.gamma * np.max(next_state_q_values)
-            
+                next_state_q_value = self.targetModel.predict(np.expand_dims(nextStates[i], axis=0))[0]
+                targets[i] += self.gamma * np.max(next_state_q_value)
+
             # use the main network to predict the current state q-values
-            current_state_q_values = self.mainModel.predict(np.expand_dims(state, axis=0))[0]
+            current_state_q_value = self.mainModel.predict(np.expand_dims(states[i], axis=0))[0]
 
             # update the q-value for the chosen action with target
-            current_state_q_values[action] = target
+            current_state_q_value[actions[i]] = targets[i]
+            current_state_q_values.append(current_state_q_value)
 
-            self.mainModel.fit(np.expand_dims(state, axis=0), np.array([current_state_q_values]))
+        self.mainModel.fit(states, current_state_q_values)
             
 if __name__ == "__main__":
     game = TicTacToe2D()
-    myDQN = DQN(game=game)
-    myDQN.train(1000)
+    myDQN = DQN(game=game, epsilon=0.5)
+    myDQN.train(20000)
