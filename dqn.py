@@ -7,7 +7,7 @@ import random
 
 class DQN:
     def __init__(self, actions=9, game=None, alpha=0.01, gamma=0.95, epsilon=0.99, epsilonMultiplier=0.9995,
-                 randomEpisodes=5000, bufferCapacity=1000, batchSize=16, mainUpdateFreq=200, targetUpdateFreq=2000):
+                 randomEpisodes=5000, bufferCapacity=10000, batchSize=16, mainUpdateFreq=200, targetUpdateFreq=2000):
         self.actions = actions
         self.game = game
         self.alpha = alpha
@@ -32,6 +32,7 @@ class DQN:
         model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=self.alpha),
                       loss='mean_squared_error',
                       metrics=['mae'])
+
         # print(model.summary())
         return model, tf.keras.models.clone_model(model)
 
@@ -90,9 +91,9 @@ class DQN:
 
                 # update stats
                 if episodeDone:
-                    if reward == 1:
+                    if reward == self.game.winReward:
                         wins += 1
-                    elif reward == 0:
+                    elif reward == self.game.drawReward:
                         draws += 1
                     else:
                         losses += 1
@@ -129,5 +130,5 @@ class DQN:
             
 if __name__ == "__main__":
     game = TicTacToe2D()
-    myDQN = DQN(game=game, epsilon=0)
-    myDQN.train(2000)
+    myDQN = DQN(game=game)
+    myDQN.train(1000)
