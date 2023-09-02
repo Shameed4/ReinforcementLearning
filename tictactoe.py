@@ -115,8 +115,10 @@ class TicTacToe:
         return tuple(self.board.ravel())
     
     # Returns the list of possible positions to move at a given position
-    def getPossibleActions(self, flatten=False):
-        return np.where(self.board.ravel() == -1)[0]
+    def getPossibleActions(self, state=None):
+        if state is None:
+            state = self.board.ravel()
+        return np.where(state == -1)[0]
     
     # Returns a random legal move
     def chooseRandomAction(self):

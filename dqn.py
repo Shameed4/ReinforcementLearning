@@ -7,7 +7,7 @@ import random
 
 class DQN:
     def __init__(self, actions=9, game=None, alpha=0.01, gamma=0.95, epsilon=0.99, epsilonMultiplier=0.9995,
-                 randomEpisodes=5000, bufferCapacity=10000, batchSize=32, mainUpdateFreq=200, targetUpdateFreq=10000):
+                 randomEpisodes=5000, bufferCapacity=10000, batchSize=32, mainUpdateFreq=200, targetUpdateFreq=1000):
         self.actions = actions
         self.game = game
         self.alpha = alpha
@@ -37,7 +37,7 @@ class DQN:
         return model, tf.keras.models.clone_model(model)
 
     def bestLegalMoveReward(self, state):
-        legalMoves = self.game.getPossibleActions(state=state, flatten=True)
+        legalMoves = self.game.getPossibleActions(state=state)
 
         # find Q-values for all possible moves (including illegal ones)
         predQ = self.mainModel.predict(np.expand_dims(state, axis=0))[0]
@@ -129,6 +129,7 @@ class DQN:
             current_state_q_value[actions[i]] = targets[i]
             current_state_q_values.append(current_state_q_value)
 
+        print(actions)
         self.mainModel.fit(np.array(states), np.array(current_state_q_values))
             
 if __name__ == "__main__":
