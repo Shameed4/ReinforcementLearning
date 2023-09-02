@@ -69,6 +69,8 @@ class DQN:
         step = 0
         
         for episode in range(episodes):
+            if episode % 100 == 0:
+                print(episode)
             self.game.reset() # reset the game after each episode
             episodeDone = False
             
@@ -98,13 +100,12 @@ class DQN:
                     else:
                         losses += 1
 
-                if len(self.replayBuffer) == self.replayBuffer.maxlen:
-                    if step % self.mainUpdateFreq == 0:
-                        self.replayUpdate(self.replayBuffer, self.batchSize)
+                if step % self.mainUpdateFreq == 0:
+                    self.replayUpdate(self.replayBuffer, self.batchSize)
 
-                    if step % self.targetUpdateFreq == 0:
-                        self.updateTarget()
-          
+                if step % self.targetUpdateFreq == 0:
+                    self.updateTarget()
+        
         print(f'Wins={wins/episodes}, Draws={draws/episodes}, Losses={losses/episodes}, Epsilon={self.epsilon}')
 
     def updateTarget(self):
@@ -129,10 +130,12 @@ class DQN:
             current_state_q_value[actions[i]] = targets[i]
             current_state_q_values.append(current_state_q_value)
 
-        print(actions)
+
         self.mainModel.fit(np.array(states), np.array(current_state_q_values))
             
 if __name__ == "__main__":
     game = TicTacToe2D()
-    myDQN = DQN(game=game, epsilon=0.5)
+    myDQN = DQN(game=game)
+    myDQN.train(20000)
+    myDQN.train(20000)
     myDQN.train(20000)

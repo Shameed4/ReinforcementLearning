@@ -24,6 +24,7 @@ class TicTacToe:
         self.spotTaken = False
         self.dims = dims
         self.dimSize = dimSize
+        self.state_size = self.board.size
         self.n_actions = self.board.size
 
         self.winReward = 1
@@ -118,7 +119,7 @@ class TicTacToe:
     def getPossibleActions(self, state=None):
         if state is None:
             state = self.board.ravel()
-        return np.where(state == -1)[0]
+        return np.where(np.array(state) == -1)[0]
     
     # Returns a random legal move
     def chooseRandomAction(self):
