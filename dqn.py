@@ -6,20 +6,20 @@ from collections import deque
 import random
 
 class DQN:
-    def __init__(self, actions=9, game=None, alpha=0.01, gamma=0.95, epsilon=0.99, epsilonMultiplier=0.9995,
-                 randomEpisodes=5000, bufferCapacity=10000, batchSize=32, mainUpdateFreq=200, targetUpdateFreq=1000):
+    def __init__(self, actions=9, game=None, alpha=0.01, gamma=0.95, epsilon=0.99, epsilon_multiplier=0.9995,
+                 random_episodes=5000, buffer_capacity=10000, batch_size=32, main_update_freq=200, target_update_freq=1000):
         self.actions = actions
         self.game = game
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
-        self.epsilonMultiplier = epsilonMultiplier
-        self.randomEpisodes = randomEpisodes
-        self.replayBuffer = deque([], maxlen=bufferCapacity)
+        self.epsilon_multiplier = epsilon_multiplier
+        self.random_episodes = random_episodes
+        self.replay_buffer = deque([], maxlen=buffer_capacity)
         self.mainModel, self.targetModel = self.build_model()
-        self.batchSize = batchSize
-        self.mainUpdateFreq = mainUpdateFreq
-        self.targetUpdateFreq = targetUpdateFreq
+        self.batch_size = batch_size
+        self.main_update_freq = main_update_freq
+        self.target_update_freq = target_update_freq
 
     # maybe we can make this accept a list as a parameter to avoid hard-coding the network?
     def build_model(self):
@@ -36,26 +36,26 @@ class DQN:
         # print(model.summary())
         return model, tf.keras.models.clone_model(model)
 
-    def bestLegalMoveReward(self, state):
-        legalMoves = self.game.getPossibleActions(state=state)
+    def best_move(self, state):
+        legal_moves = self.game.get_possible_actions(state=state)
 
         # find Q-values for all possible moves (including illegal ones)
-        predQ = self.mainModel.predict(np.expand_dims(state, axis=0))[0]
+        pred_Q = self.mainModel.predict(np.expand_dims(state, axis=0))[0]
 
         # finds the Q-value for the best legal move and turns it into a board coordinate
-        action = legalMoves[np.argmax(predQ[legalMoves])]
-        return action, predQ[action]
+        return legal_moves[np.argmax(pred_Q[legal_moves])]
 
-    def chooseMove(self, state, episode=0):
-        if episode < self.randomEpisodes:
-            return self.game.chooseRandomAction()
 
-        self.epsilon *= self.epsilonMultiplier
+    def choose_move(self, state, episode=0):
+        if episode < self.random_episodes:
+            return self.game.choose_random_action()
+
+        self.epsilon *= self.epsilon_multiplier
 
         if np.random.rand() < self.epsilon:
-            return self.game.chooseRandomAction()
+            return self.game.choose_random_action()
 
-        return self.bestLegalMoveReward(state)[0]
+        return self.best_move(state)
 
     # Trains the model for the specified number of episodes
     # If an opponent is not specified, the opponent will make a random legal move each time
@@ -72,38 +72,38 @@ class DQN:
             if episode % 100 == 0:
                 print(episode)
             self.game.reset() # reset the game after each episode
-            episodeDone = False
+            episode_done = False
             
             # alternate between x and o
             if episode % 2 == 0:
-                self.game.place(opponent.chooseMove())
+                self.game.place(opponent.choose_move())
             
-            state = self.game.getState()
-            while not episodeDone:
+            state = self.game.get_state()
+            while not episode_done:
                 step += 1
-                action = self.chooseMove(state, episode)
+                action = self.choose_move(state, episode)
 
                 # take game step
-                newState, reward, episodeDone = self.game.step(action, opponent)
+                new_state, reward, episode_done = self.game.step(action, opponent)
 
                 # update replay buffer
-                self.replayBuffer.append((state, action, reward, newState, episodeDone))
+                self.replay_buffer.append((state, action, reward, new_state, episode_done))
 
-                state = newState
+                state = new_state
 
                 # update stats
-                if episodeDone:
-                    if reward == self.game.winReward:
+                if episode_done:
+                    if reward == self.game.win_reward:
                         wins += 1
-                    elif reward == self.game.drawReward:
+                    elif reward == self.game.draw_reward:
                         draws += 1
                     else:
                         losses += 1
 
-                if step % self.mainUpdateFreq == 0:
-                    self.replayUpdate(self.replayBuffer, self.batchSize)
+                if step % self.main_update_freq == 0:
+                    self.replayUpdate(self.replay_buffer, self.batch_size)
 
-                if step % self.targetUpdateFreq == 0:
+                if step % self.target_update_freq == 0:
                     self.updateTarget()
         
         print(f'Wins={wins/episodes}, Draws={draws/episodes}, Losses={losses/episodes}, Epsilon={self.epsilon}')
@@ -112,15 +112,15 @@ class DQN:
         main_weights = self.mainModel.get_weights()
         self.targetModel.set_weights(main_weights)
 
-    def replayUpdate(self, replayBuffer, batchSize):
-        batch = random.sample(replayBuffer, batchSize)
-        states, actions, rewards, nextStates, episodeDones = zip(*batch)
+    def replayUpdate(self, replay_buffer, batch_size):
+        batch = random.sample(replay_buffer, batch_size)
+        states, actions, rewards, next_states, episode_dones = zip(*batch)
         targets = np.array(rewards)
         current_state_q_values = [ ]
         for i in range(len(batch)):
-            if not episodeDones[i]:
+            if not episode_dones[i]:
                 # use the target network to predict the next state q-values
-                next_state_q_value = self.targetModel.predict(np.expand_dims(nextStates[i], axis=0))[0]
+                next_state_q_value = self.targetModel.predict(np.expand_dims(next_states[i], axis=0))[0]
                 targets[i] += self.gamma * np.max(next_state_q_value)
 
             # use the main network to predict the current state q-values

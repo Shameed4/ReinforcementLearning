@@ -9,76 +9,79 @@ class TicTacToe:
     #
     # created variables:
     # - board: The board
-    # - numPlayers: Number of players playing
+    # - num_players: Number of players playing
     # - turn: Whose turn it is (indexed at zero)
-    def __init__(self, dims, dimSize, players) -> None:
-        self.board = np.full([dimSize for _ in range(dims)], -1, int)
+    def __init__(self, dims, dim_size, players) -> None:
+        self.board = np.full([dim_size for _ in range(dims)], -1, int)
         self.players = players
 
-        self.numPlayers = len(players) - 1
+        self.num_players = len(players) - 1
 
         self.turn = 0
-        self.gameOver = False
-        self.remainingTurns = self.board.size
+        self.game_over = False
+        self.remaining_turns = self.board.size
 
-        self.spotTaken = False
+        self.spot_taken = False
         self.dims = dims
-        self.dimSize = dimSize
+        self.dim_size = dim_size
         self.state_size = self.board.size
         self.n_actions = self.board.size
 
-        self.winReward = 1
-        self.drawReward = 0.2
-        self.losePunishment = 1
+        self.win_reward = 1
+        self.draw_reward = 0.2
+        self.lose_punishment = 1
 
     def reset(self):
-        self.board = np.full([self.dimSize for _ in range(self.board.ndim)], -1, int)
+        self.board = np.full([self.dim_size for _ in range(self.board.ndim)], -1, int)
         self.turn = 0
-        self.gameOver = False
-        self.remainingTurns = int(self.dimSize ** self.board.ndim)
-        self.spotTaken = False
+        self.game_over = False
+        self.remaining_turns = int(self.dim_size ** self.board.ndim)
+        self.spot_taken = False
     
-    def is_legal(self, move) -> bool:
-        # input is the wrong size
-        if len(move) != self.board.ndim:
+    # Tries placing the given move. If legal, returns True and places. Otherwise, returns False
+    def try_place(self, move : str) -> bool:
+        move = move.strip()
+        
+        # check if moves is the correct type and size
+        if not move.isdigit() or len(move) != self.dims:
             return False
         
-        # input is out of bounds (probably will happen many times)
-        for i in move:
-            if i < 0 or i >= len(self.board):
-                return False
-
+        move = np.array(list(move), dtype=int)
+    
+        # check if move is in bounds
+        if np.any((move < 0) | (move >= self.dim_size)):
+            return False
+        
         # check if move was already placed there
-        if self.board[move] != -1:
+        if self.board[tuple(move)] != -1:
             print("Move was already placed here!")
         
-        return self.board[move] == -1
+        self.place(move)
+        return True
         
     # places an item on the board, assuming the move is legal
     def place(self, move):
         # interprets the move if it is not an integer but a tuple instead
-        if not isinstance(move, int):
+        if np.issubdtype(type(move), np.integer):
             move = np.unravel_index(move, shape=self.board.shape)
+        move = tuple(move)
 
-        self.spotTaken = False
-
-        if not self.is_legal(move):
-            return
+        self.spot_taken = False
         
         if self.board[move] != -1:
             print("Spot already taken, try again.")
-            self.spotTaken = True
+            self.spot_taken = True
             return
 
-        self.remainingTurns -= 1
+        self.remaining_turns -= 1
         self.board[move] = self.turn
         
         if self.check_win(move):
-            self.gameOver = True
+            self.game_over = True
             return
 
         self.turn += 1
-        self.turn %= self.numPlayers
+        self.turn %= self.num_players
 
     # checks if there are any 3-in-a-row's containing the given input
     def check_win(self, input) -> bool:
@@ -104,49 +107,49 @@ class TicTacToe:
     
     # returns string representation of the board
     def __str__(self):
-        boardCopy = self.board.astype(str)
+        board_copy = self.board.astype(str)
         for i, s in enumerate(self.players):
-            boardCopy[boardCopy == str(i - 1)] = s
-        return str(boardCopy)
+            board_copy[board_copy == str(i - 1)] = s
+        return str(board_copy)
     
     # Returns the index to use when looking up the reward in the Q-table
     # move - Returns the index if the current player placed their move there. 
     # If move is not specified, it returns the index at the current position.
-    def getState(self, move=None):
+    def get_state(self, move=None):
         return tuple(self.board.ravel())
     
     # Returns the list of possible positions to move at a given position
-    def getPossibleActions(self, state=None):
+    def get_possible_actions(self, state=None):
         if state is None:
             state = self.board.ravel()
         return np.where(np.array(state) == -1)[0]
     
     # Returns a random legal move
-    def chooseRandomAction(self):
-        return np.random.choice(self.getPossibleActions())
+    def choose_random_action(self):
+        return np.random.choice(self.get_possible_actions())
     
-    # Performs specified action and returns the new state, reward, and gameOver
+    # Performs specified action and returns the new state, reward, and game_over
     def step(self, action, opponent):
         self.place(action)
         
         # win
-        if self.gameOver:
-            return self.getState(), self.winReward, True
+        if self.game_over:
+            return self.get_state(), self.win_reward, True
         # draw
-        if self.remainingTurns == 0:
-            return self.getState(), self.drawReward, True
+        if self.remaining_turns == 0:
+            return self.get_state(), self.draw_reward, True
         
-        self.place(opponent.chooseMove())
+        self.place(opponent.choose_move())
 
         # loss
-        if self.gameOver:
-            return self.getState(), -self.losePunishment, True
+        if self.game_over:
+            return self.get_state(), -self.lose_punishment, True
         # draw
-        if self.remainingTurns == 0:
-            return self.getState(), self.drawReward, True
+        if self.remaining_turns == 0:
+            return self.get_state(), self.draw_reward, True
         
         # game is not over
-        return self.getState(), 0, False
+        return self.get_state(), 0, False
 
 
 
@@ -158,10 +161,10 @@ class TicTacToe2D(TicTacToe):
     #
     # created variables:
     # - board: The board
-    # - numPlayers: Number of players playing
+    # - num_players: Number of players playing
     # - turn: Whose turn it is (indexed at zero)
     def __init__(self) -> None:
-        super().__init__(dims=2, dimSize=3, players=['', 'x', 'o'])
+        super().__init__(dims=2, dim_size=3, players=['', 'x', 'o'])
 
 
     # checks if there are any 3-in-a-row's containing the given input
@@ -195,11 +198,11 @@ class TicTacToe3D(TicTacToe):
     #
     # created variables:
     # - board: The board
-    # - numPlayers: Number of players playing
+    # - num_players: Number of players playing
     # - turn: Whose turn it is (indexed at zero)
-    # TODO: implement getPossibleActions, add 3D diagonals 
+    # TODO: implement get_possible_actions, add 3D diagonals 
     def __init__(self) -> None:
-        super().__init__(dims=3, dimSize=4, players=['', 'x', 'o'])
+        super().__init__(dims=3, dim_size=4, players=['', 'x', 'o'])
 
     # checks if there are any 3-in-a-row's containing the given input
     def check_win(self, input) -> bool:
@@ -218,28 +221,28 @@ class TicTacToe3D(TicTacToe):
             return True
 
         # check diagonal with same z but x and y are changing
-        zSlice = self.board[:,:,z] 
-        if x == y and np.all(zSlice.diagonal() == self.board[input]):
+        z_slice = self.board[:,:,z] 
+        if x == y and np.all(z_slice.diagonal() == self.board[input]):
             return True
-        elif x == self.dimSize - y - 1 and np.all(np.fliplr(zSlice).diagonal() == self.board[input]):
+        elif x == self.dim_size - y - 1 and np.all(np.fliplr(z_slice).diagonal() == self.board[input]):
             return True
-        del zSlice
+        del z_slice
         
         # check diagonal with same y but x and z are changing
-        ySlice = self.board[:,y,:]
-        if x == z and np.all(ySlice.diagonal() == self.board[input]):
+        y_slice = self.board[:,y,:]
+        if x == z and np.all(y_slice.diagonal() == self.board[input]):
             return True
-        elif x == self.dimSize - z - 1 and np.all(np.fliplr(ySlice).diagonal() == self.board[input]):
+        elif x == self.dim_size - z - 1 and np.all(np.fliplr(y_slice).diagonal() == self.board[input]):
             return True
-        del ySlice
+        del y_slice
 
         # check diagonal with same x but y and z are changing
-        xSlice = self.board[x,:,:]
-        if y == z and np.all(xSlice.diagonal() == self.board[input]):
+        x_slice = self.board[x,:,:]
+        if y == z and np.all(x_slice.diagonal() == self.board[input]):
             return True
-        elif y == self.dimSize - z - 1 and np.all(np.fliplr(xSlice).diagonal() == self.board[input]):
+        elif y == self.dim_size - z - 1 and np.all(np.fliplr(x_slice).diagonal() == self.board[input]):
             return True
-        del xSlice
+        del x_slice
 
         return False
 
@@ -264,20 +267,20 @@ def test2D():
         x = myInt // 10
         y = myInt % 10
         
-        if (x not in range(0, game.dimSize)) or (y not in range(0, game.dimSize)):
+        if (x not in range(0, game.dim_size)) or (y not in range(0, game.dim_size)):
             print("Move is out of bounds, try again")
             continue
 
         game.place((x, y))
 
-        if game.spotTaken == False:
+        if game.spot_taken == False:
             print(game)
 
-        if game.gameOver == True:
+        if game.game_over == True:
             print(f"Player '{game.players[game.turn+1]}' wins!")
             break
 
-        if game.remainingTurns == 0:
+        if game.remaining_turns == 0:
             print("Draw")
             break
 
@@ -297,20 +300,20 @@ def test3D():
         y = math.floor(myInt / 10) % 10
         z = math.floor(myInt % 10)
 
-        if (x not in range(0, game.dimSize)) or (y not in range(0, game.dimSize)) or (z not in range(0, game.dimSize)):
+        if (x not in range(0, game.dim_size)) or (y not in range(0, game.dim_size)) or (z not in range(0, game.dim_size)):
             print("Move is out of bounds, try again")
             continue
     
         game.place((x, y, z))
 
-        if game.spotTaken == False:
+        if game.spot_taken == False:
             print(game)
 
-        if game.gameOver == True:
+        if game.game_over == True:
             print(f"Player '{game.players[game.turn+1]}' wins!")
             break
 
-        if game.remainingTurns == 0:
+        if game.remaining_turns == 0:
             print("Draw")
             break
 
