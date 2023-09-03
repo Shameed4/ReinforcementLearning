@@ -7,13 +7,12 @@ class QLearning:
     # gamma - discount rate
     # epsilon - greedy-epsilon parameter
     # num_episodes - number of simulated episodes
-    def __init__(self, game, alpha=0.01, gamma=0.95, epsilon=0.99, epsilon_multiplier=0.9995, random_episodes=5000, table=None):
+    def __init__(self, game, alpha=0.01, gamma=0.95, epsilon=0.99, epsilon_multiplier=0.9995, table=None):
         self.game = game
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
         self.epsilon_multiplier = epsilon_multiplier
-        self.random_episodes = random_episodes
 
         if table is None:
             # (num_players+1)^boardSize for the state, and boardSize for action
@@ -25,10 +24,7 @@ class QLearning:
     # In the beginning, it will initially choose moves that are ENTIRELY random to set up the Q-table
     # Later, it will choose between random and its best move
     # Episode - The number of episodes that have been simulated
-    def choose_move(self, episode=0):
-        if episode < self.random_episodes:
-            return self.game.choose_random_action()
-        
+    def choose_move(self):
         self.epsilon *= self.epsilon_multiplier
         
         if np.random.rand() < self.epsilon:
@@ -60,7 +56,7 @@ class QLearning:
             
             state = self.game.get_state()
             while not episode_done:
-                action = self.choose_move(episode)
+                action = self.choose_move()
                 pred_q = self.table[state][action] # index the q table with the current state and action
                 
                 # take game step
@@ -82,7 +78,7 @@ class QLearning:
                     else:
                         losses += 1
             
-        print(f'Wins={wins/episodes}, Draws={draws/episodes}, Losses={losses/episodes}, Epsilon={self.epsilon}')
+        print(f'Wins={wins/episodes}, Draws={draws/episodes}, Losses={losses/episodes}, _epsilon={self.epsilon}')
     
     def cloneTable(self, epsilon=0.75, epsilon_multiplier=1):
         return QLearning(game=self.game, random_episodes=0, epsilon=epsilon, epsilon_multiplier=epsilon_multiplier, table=np.copy(self.table))
@@ -90,17 +86,15 @@ class QLearning:
 
 if __name__ == "__main__":
     game = TicTacToe2D()
-    model = QLearning(game, epsilon_multiplier=0.999995, random_episodes=20000, alpha=0.02, gamma=0.95)
+    model = QLearning(game, epsilon_multiplier=0.999995, alpha=0.02, gamma=0.95)
     
-    print("Random")
-    model.train(20000, opponent=RandomPlayer(game))
-    model.random_episodes = 0
-    
-    def train_epoch(random_episodes, clone_episodes, steps, minEpsilon, maxEpsilon):
+    def train_epoch(random_episodes=1000, clone_episodes=1000, steps=40, start_epsilon=1.5):
+        if start_epsilon is not None:
+            model.epsilon = start_epsilon
+
         print("-----------\nNew Epoch\n-----------")
-        for trainStep in range(steps):
-            model.epsilon = np.random.rand() * (maxEpsilon - minEpsilon) + minEpsilon
-            print("Remaining rounds:", steps - trainStep, "alpha=", model.alpha)
+        for train_step in range(steps):
+            print("Remaining rounds:", steps - train_step, "alpha=", model.alpha)
             if clone_episodes != 0:
                 print("Clone")
                 model.train(clone_episodes, opponent=model)
@@ -108,29 +102,78 @@ if __name__ == "__main__":
                 print("Random")
                 model.train(random_episodes)
 
-    train_epoch(2000, 0, 20, 0.95, 1)
-    train_epoch(2000, 0, 20, 0.5, 1)
-    train_epoch(2000, 1000, 20, 0.25, 0.5)
-    train_epoch(2000, 1500, 20, 0, 0.25)
-    train_epoch(2000, 1500, 200, 0, 1)
-    train_epoch(2000, 1500, 100, 0, 0)
+    def gui():
+        inp = input('''
+              T - Continue training
+              P - Play against model
+              S - Save model
+              ''')
+        inp = inp.strip().upper()
+
+        if inp == "T":
+            cont = input("Continue training? (y/n)") != "n"
+            while cont:
+                if input("Change parameters (y/n)") != "n":
+                    rand_episodes = int(input("Random episodes:"))
+                    clone_episodes = int(input("Clone episodes:"))
+                    steps = int(input("Steps:"))
+                    epsilon = float(input("Starting epsilon:"))
+                train_epoch(rand_episodes, clone_episodes, steps, min_epsilon, max_epsilon)
+                cont = input("Continue training? (y/n)") != "n"
+        
+        elif input == "P":
+            inp2 = input("How many games?")
+            if inp2.isdigit():
+                inp2 = int(inp2)
+                model.train(inp2, HumanPlayer(game))
+            else:
+                print("Invalid input")
+        
+        elif input == "S":
+            np.save('qlearning.npy', model.table)
+
+    
+    # large number of random moves          
+    # train_epoch(10000, 0, 15, 30)
+    
+    # # some exploration
+    # train_epoch(2000, 0, 30, 1)
+
+    # # getting better, start training against itself
+    # train_epoch(2000, 500, 25, 1.2)
+    # train_epoch(2000, 1000, 25, 1.2)
+    # train_epoch(2000, 1500, 25, 1.2)
+
+    # train_epoch(2000, 2000, 50, 1.2)
+    # train_epoch(2000, 2000, 50, 1.2)
+    
+    # # train against itself
+    # train_epoch(0, 2000, 20, 1)
+    
+    # train_epoch(2000, 2000, 50, 1.2)
+    # train_epoch(2000, 2000, 50, 1.2)
+    # train_epoch(2000, 2000, 50, 1.2)
+    # train_epoch(2000, 2000, 50, 1.2)
+    # train_epoch(2000, 2000, 50, 1.2)
+    # train_epoch(2000, 2000, 50, 1.2)
+
+    # # final test to see if it has reached perfection
+    # train_epoch(10000, 10000, 5, 0)
 
     rand_episodes = 2000
-    clone_episodes = 0
+    clone_episodes = 2000
     steps = 20
-    minEpsilon = 0
-    maxEpsilon = 1
+    epsilon = 1
 
     while input("Continue training? (y/n)") != "n":
+        print(f"Parameters: rand_episodes={rand_episodes} clone_episodes={clone_episodes} steps={steps} epsilon={1}")
         if input("Change parameters (y/n)") != "n":
             rand_episodes = int(input("Random episodes:"))
             clone_episodes = int(input("Clone episodes:"))
             steps = int(input("Steps:"))
-            minEpsilon = float(input("Min epsilon:"))
-            maxEpsilon = float(input("Max epsilon:"))
-        train_epoch(rand_episodes, clone_episodes, steps, minEpsilon, maxEpsilon)
-        
-        
-    
+            epsilon = float(input("Epsilon:"))
+        train_epoch(rand_episodes, clone_episodes, steps, epsilon)
+
+    gui()
 
     model.train(5, HumanPlayer(game))

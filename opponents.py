@@ -9,9 +9,10 @@ class HumanPlayer():
     def choose_move(self):
         print("Playing as player", self.game.turn+1)
         print(self.game)
-        move = input("Select a move: ")
-        while not self.game.try_place(move):
-            move = input("Select a move: ")
+        move = False
+        while not move:
+            move = self.game.clean_move(input("Select a move: "))
+        return move
 
 # player that chooses a random legal move
 class RandomPlayer():

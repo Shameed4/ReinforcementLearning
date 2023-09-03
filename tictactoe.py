@@ -38,8 +38,8 @@ class TicTacToe:
         self.remaining_turns = int(self.dim_size ** self.board.ndim)
         self.spot_taken = False
     
-    # Tries placing the given move. If legal, returns True and places. Otherwise, returns False
-    def try_place(self, move : str) -> bool:
+    # Cleans the string move if it is legal. Otherwise, returns False.
+    def clean_move(self, move : str):
         move = move.strip()
         
         # check if moves is the correct type and size
@@ -51,13 +51,12 @@ class TicTacToe:
         # check if move is in bounds
         if np.any((move < 0) | (move >= self.dim_size)):
             return False
-        
+
         # check if move was already placed there
         if self.board[tuple(move)] != -1:
-            print("Move was already placed here!")
-        
-        self.place(move)
-        return True
+            return False
+
+        return tuple(move)
         
     # places an item on the board, assuming the move is legal
     def place(self, move):
