@@ -87,6 +87,9 @@ class QLearning:
 if __name__ == "__main__":
     game = TicTacToe2D()
     model = QLearning(game, epsilon_multiplier=0.999995, alpha=0.02, gamma=0.95)
+
+    if input("Load model? (Y|N): ".strip().upper()) == "Y":
+        model.table = np.load("./qlearning.npy")
     
     def train_epoch(random_episodes=1000, clone_episodes=1000, steps=40, start_epsilon=1.5):
         if start_epsilon is not None:
@@ -103,38 +106,43 @@ if __name__ == "__main__":
                 model.train(random_episodes)
 
     def gui():
-        inp = input('''
+        while True:        
+            inp = input('''
               T - Continue training
               P - Play against model
               S - Save model
-              ''')
-        inp = inp.strip().upper()
-
-        if inp == "T":
-            cont = input("Continue training? (y/n)") != "n"
-            while cont:
-                if input("Change parameters (y/n)") != "n":
-                    rand_episodes = int(input("Random episodes:"))
-                    clone_episodes = int(input("Clone episodes:"))
-                    steps = int(input("Steps:"))
-                    epsilon = float(input("Starting epsilon:"))
-                train_epoch(rand_episodes, clone_episodes, steps, min_epsilon, max_epsilon)
+              Q - Quit
+              ''').strip().upper()
+            if inp == "T":
                 cont = input("Continue training? (y/n)") != "n"
-        
-        elif input == "P":
-            inp2 = input("How many games?")
-            if inp2.isdigit():
-                inp2 = int(inp2)
-                model.train(inp2, HumanPlayer(game))
-            else:
-                print("Invalid input")
-        
-        elif input == "S":
-            np.save('qlearning.npy', model.table)
+                while cont:
+                    if input("Change parameters (y/n)") != "n":
+                        rand_episodes = int(input("Random episodes:"))
+                        clone_episodes = int(input("Clone episodes:"))
+                        steps = int(input("Steps:"))
+                        epsilon = float(input("Starting epsilon:"))
+                    train_epoch(rand_episodes, clone_episodes, steps, epsilon)
+                    cont = input("Continue training? (y/n)") != "n"
+            
+            elif inp == "P":
+                inp2 = input("How many games?")
+                if inp2.isdigit():
+                    inp2 = int(inp2)
+                    model.train(inp2, HumanPlayer(game))
+                else:
+                    print("Invalid input")
+            
+            elif inp == "S":
+                print("Saving")
+                np.save('./qlearning.npy', model.table)
+
+            elif inp == "Q":
+                print("Quitting")
+                return
 
     
     # large number of random moves          
-    # train_epoch(10000, 0, 15, 30)
+    train_epoch(10000, 0, 15, 30)
     
     # # some exploration
     # train_epoch(2000, 0, 30, 1)
@@ -175,5 +183,3 @@ if __name__ == "__main__":
         train_epoch(rand_episodes, clone_episodes, steps, epsilon)
 
     gui()
-
-    model.train(5, HumanPlayer(game))
