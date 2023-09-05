@@ -5,6 +5,18 @@ import tensorflow as tf
 from collections import deque
 import random
 
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+  # Restrict TensorFlow to only use the first GPU
+  try:
+    tf.config.set_visible_devices(gpus[0], 'GPU')
+    logical_gpus = tf.config.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPU")
+  except RuntimeError as e:
+    # Visible devices must be set before GPUs have been initialized
+    print(e)
+
 class DQN:
     def __init__(self, actions=9, game=None, alpha=0.01, gamma=0.95, epsilon=0.99, epsilon_multiplier=0.9995,
                  random_episodes=5000, buffer_capacity=10000, batch_size=32, main_update_freq=200, target_update_freq=1000):
