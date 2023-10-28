@@ -83,6 +83,11 @@ class QLearning:
     def cloneTable(self, epsilon=0.75, epsilon_multiplier=1):
         return QLearning(game=self.game, random_episodes=0, epsilon=epsilon, epsilon_multiplier=epsilon_multiplier, table=np.copy(self.table))
 
+    def save(self):
+        np.save('./qlearning.npy', self.table)
+
+    def load(self):
+        self.table = np.load("./qlearning.npy")
 
 if __name__ == "__main__":
     game = TicTacToe2D()
@@ -142,7 +147,7 @@ if __name__ == "__main__":
 
     
     # large number of random moves          
-    train_epoch(10000, 0, 15, 30)
+    # train_epoch(10000, 0, 15, 30)
     
     # # some exploration
     # train_epoch(2000, 0, 30, 1)

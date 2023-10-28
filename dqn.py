@@ -28,8 +28,8 @@ class DQN:
         self.epsilon_multiplier = epsilon_multiplier
         self.random_episodes = random_episodes
         self.replay_buffer = deque([], maxlen=buffer_capacity)
-        self.mainModel, self.targetModel = self.build_model()
         self.batch_size = batch_size
+        self.mainModel, self.targetModel = self.build_model()
         self.main_update_freq = main_update_freq
         self.target_update_freq = target_update_freq
 
@@ -148,6 +148,8 @@ class DQN:
 if __name__ == "__main__":
     game = TicTacToe2D()
     myDQN = DQN(game=game)
-    myDQN.train(20000)
-    myDQN.train(20000)
-    myDQN.train(20000)
+    while input("Keep training? (Y|N)") != "N":
+        myDQN.train(1000)
+    else:
+        pass
+
