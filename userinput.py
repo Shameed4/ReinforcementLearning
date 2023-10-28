@@ -20,7 +20,17 @@ def promptDigit(prompt):
     return int(inp)
 
 
+def promptFloat(prompt):
+    prompt += ": "
+    inp = input(prompt)
+    while True:
+        try:
+            float(inp)
+            return float(inp)
+        except ValueError:
+            inp = input(inp)
+
+
 if __name__ == "__main__":
     while True:
-        print(promptYesNo("Testing..."))
-        print(promptDigit("Enter a number"))
+        print(promptFloat("Enter a float"))

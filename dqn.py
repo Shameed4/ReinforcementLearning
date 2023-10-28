@@ -1,3 +1,5 @@
+import keras
+
 from tictactoe import TicTacToe2D
 from opponents import *
 import numpy as np
@@ -18,15 +20,14 @@ if gpus:
     print(e)
 
 class DQN:
-    def __init__(self, actions=9, game=None, alpha=0.01, gamma=0.95, epsilon=0.99, epsilon_multiplier=0.9995,
-                 random_episodes=5000, buffer_capacity=10000, batch_size=32, main_update_freq=200, target_update_freq=1000):
+    def __init__(self, actions=9, game=None, alpha=0.02, gamma=0.95, epsilon=0.99, epsilon_multiplier=0.9995,
+                 buffer_capacity=10000, batch_size=32, main_update_freq=200, target_update_freq=1000):
         self.actions = actions
         self.game = game
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
         self.epsilon_multiplier = epsilon_multiplier
-        self.random_episodes = random_episodes
         self.replay_buffer = deque([], maxlen=buffer_capacity)
         self.batch_size = batch_size
         self.mainModel, self.targetModel = self.build_model()
@@ -57,17 +58,12 @@ class DQN:
         # finds the Q-value for the best legal move and turns it into a board coordinate
         return legal_moves[np.argmax(pred_Q[legal_moves])]
 
-
-    def choose_move(self, state, episode=0):
-        if episode < self.random_episodes:
-            return self.game.choose_random_action()
-
+    def choose_move(self, episode=0):
         self.epsilon *= self.epsilon_multiplier
-
         if np.random.rand() < self.epsilon:
             return self.game.choose_random_action()
 
-        return self.best_move(state)
+        return self.best_move(self.game.get_state())
 
     # Trains the model for the specified number of episodes
     # If an opponent is not specified, the opponent will make a random legal move each time
@@ -93,7 +89,7 @@ class DQN:
             state = self.game.get_state()
             while not episode_done:
                 step += 1
-                action = self.choose_move(state, episode)
+                action = self.choose_move(episode)
 
                 # take game step
                 new_state, reward, episode_done = self.game.step(action, opponent)
@@ -142,9 +138,16 @@ class DQN:
             current_state_q_value[actions[i]] = targets[i]
             current_state_q_values.append(current_state_q_value)
 
-
         self.mainModel.fit(np.array(states), np.array(current_state_q_values))
-            
+
+    def save(self):
+        self.mainModel.save("dqnModel.keras")
+
+    def load(self):
+        self.mainModel = keras.models.load_model("dqnModel.keras")
+        self.targetModel = keras.models.load_model("dqnModel.keras")
+
+
 if __name__ == "__main__":
     game = TicTacToe2D()
     myDQN = DQN(game=game)

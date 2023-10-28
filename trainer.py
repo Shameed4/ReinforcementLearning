@@ -3,7 +3,7 @@ from qtable import QLearning
 from dqn import DQN
 from tictactoe import TicTacToe2D
 from opponents import HumanPlayer, RandomPlayer
-from userinput import promptTwoLetters, promptYesNo, promptDigit
+from userinput import promptTwoLetters, promptYesNo, promptDigit, promptFloat
 
 if __name__ == "__main__":
     game = TicTacToe2D()
@@ -29,7 +29,7 @@ if __name__ == "__main__":
             if random_episodes != 0:
                 print("Random")
                 model.train(random_episodes)
-
+            model.save() # remove when we're happy with model's accuracy
 
     def gui():
         while True:
@@ -40,13 +40,18 @@ if __name__ == "__main__":
               Q - Quit
               ''').strip().upper()
             if inp == "T":
-                cont = promptYesNo("Continue training? (y/n)")
+                cont = True
                 while cont:
-                    if input("Change parameters (y/n)") != "n":
-                        rand_episodes = int(input("Random episodes:"))
-                        clone_episodes = int(input("Clone episodes:"))
-                        steps = int(input("Steps:"))
-                        epsilon = float(input("Starting epsilon:"))
+                    rand_episodes = 2000
+                    clone_episodes = 2000
+                    steps = 20
+                    epsilon = 1
+                    print(f"Parameters: rand_episodes={rand_episodes} clone_episodes={clone_episodes} steps={steps} epsilon={epsilon}")
+                    if promptYesNo("Change parameters (y/n)"):
+                        rand_episodes = promptDigit("Random Episodes")
+                        clone_episodes = promptDigit("Clone episodes")
+                        steps = promptDigit("Steps")
+                        epsilon = promptFloat("Starting epsilon:")
                     train_epoch(rand_episodes, clone_episodes, steps, epsilon)
                     cont = promptYesNo("Continue training? (y/n)")
 
@@ -62,18 +67,15 @@ if __name__ == "__main__":
                 print("Quitting")
                 return
 
-    rand_episodes = 2000
-    clone_episodes = 2000
-    steps = 20
-    epsilon = 1
 
-    while input("Continue training? (y/n)") != "n":
-        print(f"Parameters: rand_episodes={rand_episodes} clone_episodes={clone_episodes} steps={steps} epsilon={1}")
-        if input("Change parameters (y/n)") != "n":
-            rand_episodes = promptDigit("Random episodes")
-            clone_episodes = promptDigit("Clone episodes")
-            steps = promptDigit("Steps")
-            epsilon = float(input("Epsilon:"))
-        train_epoch(rand_episodes, clone_episodes, steps, epsilon)
+
+    # while not promptYesNo("Train?"):
+    #     print(f"Parameters: rand_episodes={rand_episodes} clone_episodes={clone_episodes} steps={steps} epsilon={epsilon}")
+    #     if not promptYesNo("Change parameters?"):
+    #         rand_episodes = promptDigit("Random episodes")
+    #         clone_episodes = promptDigit("Clone episodes")
+    #         steps = promptDigit("Steps")
+    #         epsilon = float(input("Epsilon:"))
+    #     train_epoch(rand_episodes, clone_episodes, steps, epsilon)
 
     gui()
