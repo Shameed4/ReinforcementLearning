@@ -1,4 +1,4 @@
-# TicTacToe
+# Reinforcement Learning TicTacToe
 TicTacToe Game with Reinforcement Learning implemented using Q-learning and Deep Q-learning.
 
 Q-learning model has been trained while Deep Q-learning is in progress. Please run trainer.py to run the code. Other main files are solely for testing.
