@@ -7,6 +7,7 @@ import tensorflow as tf
 from collections import deque
 import random
 
+print("Tensorflow", tf.__version__)
 print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
@@ -141,11 +142,11 @@ class DQN:
         self.mainModel.fit(np.array(states), np.array(current_state_q_values))
 
     def save(self):
-        self.mainModel.save("dqnModel.keras")
+        self.mainModel.save_weights("dqnModel.weights.h5")
 
     def load(self):
-        self.mainModel = keras.models.load_model("dqnModel.keras")
-        self.targetModel = keras.models.load_model("dqnModel.keras")
+        self.mainModel.load_weights("dqnModel.weights.h5")
+        self.targetModel.load_weights("dqnModel.weights.h5")
 
 
 if __name__ == "__main__":

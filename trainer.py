@@ -32,6 +32,10 @@ if __name__ == "__main__":
             model.save() # remove when we're happy with model's accuracy
 
     def gui():
+        rand_episodes = 2000
+        clone_episodes = 2000
+        steps = 20
+        epsilon = 1
         while True:
             inp = input('''
               T - Continue training
@@ -42,10 +46,6 @@ if __name__ == "__main__":
             if inp == "T":
                 cont = True
                 while cont:
-                    rand_episodes = 2000
-                    clone_episodes = 2000
-                    steps = 20
-                    epsilon = 1
                     print(f"Parameters: rand_episodes={rand_episodes} clone_episodes={clone_episodes} steps={steps} epsilon={epsilon}")
                     if promptYesNo("Change parameters (y/n)"):
                         rand_episodes = promptDigit("Random Episodes")
