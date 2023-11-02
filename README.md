@@ -5,3 +5,5 @@ Q-learning model has been trained while Deep Q-learning is in progress. Please r
 It will give you options including choosing the agent you want to train, whether you want to load a new model or start from scratch, and what you want to do with the model.
 
 Currently, everything is implemented on the console but in the future we would like to implement a GUI. 
+
+Created by Matthew Zhang and Sean Erfan.
